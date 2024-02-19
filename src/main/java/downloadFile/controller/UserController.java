@@ -6,6 +6,7 @@ import downloadFile.repository.UserRepoistory;
 import downloadFile.service.UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 
 import org.springframework.http.MediaType;
@@ -16,8 +17,10 @@ import org.springframework.web.bind.annotation.*;
 import java.awt.*;
 import java.awt.print.Book;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @RestController
 public class UserController {
@@ -47,15 +50,43 @@ public class UserController {
     }
 
 
-     @Async(value = "taskExecutor")
-     @PostMapping (value = "/excel-exportWIthSpec" , produces = MediaType.APPLICATION_JSON_VALUE)
-      public CompletableFuture  <ResponseEntity> exportToExcel(HttpServletResponse response,@RequestBody  UserSearch search, @RequestParam int pageNum, @RequestParam int pageSize ) throws IOException {
-        response.setContentType("application/octet-stream");
-        String headerKey = "Content-Disposition";
-        String headerValue = "attachment;filename=users.xls";
-        response.setHeader(headerKey, headerValue);
-        return userService.findByUserSpecAndPage(response,pageNum, pageSize, search).thenApply(ResponseEntity::ok);
+    @Async(value = "taskExecutor")
+    @PostMapping("/export-users")
+    public void exportUsersToExcel(HttpServletResponse response, @RequestParam int pageNum, @RequestParam int pageSize,@RequestBody UserSearch search) throws Exception {
+        List<CompletableFuture<Page<User>>> futures = new ArrayList<>();
+        // Submit multiple asynchronous tasks to fetch users
+        for (int i = 0; i < 5; i++) {
+            futures.add(userService.findByUserSpecAndPage(response, pageNum + i, pageSize, search));
+        }
+
+        // Wait for all tasks to complete
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        // Merge results
+        List<User> allUsers = futures.stream()
+                .map(CompletableFuture::join)
+                .flatMap(page -> page.getContent().stream())
+                .collect(Collectors.toList());
+
+        // Export merged users to Excel
+        userService.exportUsersToExcel(response, allUsers);
     }
+
+
+
+
+
+
+//
+//     @Async(value = "taskExecutor")
+//     @PostMapping (value = "/excel-exportWIthSpec" , produces = MediaType.APPLICATION_JSON_VALUE)
+//      public CompletableFuture  <ResponseEntity> exportToExcel(HttpServletResponse response,@RequestBody  UserSearch search, @RequestParam int pageNum, @RequestParam int pageSize ) throws IOException {
+////        response.setContentType("application/octet-stream");
+//        String headerKey = "Content-Disposition";
+//        String headerValue = "attachment;filename=users.xls";
+//        response.setHeader(headerKey, headerValue);
+//        return userService.findByUserSpecAndPage(response,pageNum, pageSize, search).thenApply(ResponseEntity::ok);
+//    }
 
     @Async(value = "taskExecutor")
     @PostMapping("/specOnly")
