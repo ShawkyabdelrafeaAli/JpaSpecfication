@@ -81,7 +81,7 @@ public class UserService {
         row.createCell(2).setCellValue("LastName");
         row.createCell(3).setCellValue("Email");
         row.createCell(4).setCellValue("Gender");
-        System.out.println("TTTTTTTTTTTTTTT");
+
         int dataRowIndex = 1;
         for (User user : users) {
             HSSFRow dataRow = sheet.createRow(dataRowIndex);
