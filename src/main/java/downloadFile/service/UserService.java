@@ -59,18 +59,54 @@ public class UserService {
         ops.close();
 
     }
+//
+//    @Async(value = "taskExecutor")
+//    public CompletableFuture<Page<User>> findByUserSpecAndPage(HttpServletResponse response, int pageNum, int pageSize, UserSearch search) throws IOException {
+//        Pageable page = PageRequest.of(pageNum, pageSize);
+//        UserSpec spec = new UserSpec(search);
+//        Page <User> users =  userRepoistory.findAll(spec, page);
+//
+//        HSSFWorkbook workbook = new HSSFWorkbook();
+//        HSSFSheet sheet = workbook.createSheet("Users Info");
+//        HSSFRow row = sheet.createRow(0);
+//
+//        // Add column headers to the Excel sheet
+//        row.createCell(0).setCellValue("ID");
+//        row.createCell(1).setCellValue("FirstName");
+//        row.createCell(2).setCellValue("LastName");
+//        row.createCell(3).setCellValue("Email");
+//        row.createCell(4).setCellValue("Gender");
+//
+//        int dataRowIndex = 1;
+//        for (User user : users) {
+//            HSSFRow dataRow = sheet.createRow(dataRowIndex);
+//            dataRow.createCell(0).setCellValue(user.getId());
+//            dataRow.createCell(1).setCellValue(user.getFirstName());
+//            dataRow.createCell(2).setCellValue(user.getLastName());
+//            dataRow.createCell(3).setCellValue(user.getEmail());
+//            dataRow.createCell(4).setCellValue(user.getGender());
+//            dataRowIndex++;
+//        }
+//
+//        ServletOutputStream ops = response.getOutputStream();
+//        workbook.write(ops);
+//        workbook.close();
+//        ops.close();
+//        return CompletableFuture.completedFuture(users);
+//    }
+
+
 
     @Async(value = "taskExecutor")
     public CompletableFuture<Page<User>> findByUserSpecAndPage(HttpServletResponse response, int pageNum, int pageSize, UserSearch search) throws IOException {
-//        List<User> users = userRepoistory.findAll(new UserSpec(search));
-//        UserSpec spec = new UserSpec(search);
-
-//        List<User> users = userRepoistory.findAll(spec);   // Create a new Excel workbook and sheet
-
         Pageable page = PageRequest.of(pageNum, pageSize);
         UserSpec spec = new UserSpec(search);
-        Page <User> users =  userRepoistory.findAll(spec, page);
+        Page<User> users = userRepoistory.findAll(spec, page);
 
+        return CompletableFuture.completedFuture(users);
+    }
+    @Async(value = "taskExecutor")
+    public void exportUsersToExcel(HttpServletResponse response, List<User> users) throws IOException {
         HSSFWorkbook workbook = new HSSFWorkbook();
         HSSFSheet sheet = workbook.createSheet("Users Info");
         HSSFRow row = sheet.createRow(0);
@@ -93,52 +129,14 @@ public class UserService {
             dataRowIndex++;
         }
 
-        ServletOutputStream ops = response.getOutputStream();
-        workbook.write(ops);
+        response.setContentType("application/vnd.ms-excel");
+        response.setHeader("Content-Disposition", "attachment; filename=users.xls");
+
+        workbook.write(response.getOutputStream());
         workbook.close();
-        ops.close();
-        return CompletableFuture.completedFuture(users);
+        response.getOutputStream().close();
     }
 
-//
-//    public void findByUserSpec(HttpServletResponse response,UserSearch search) throws IOException {
-//        UserSpec spec = new UserSpec(search);
-//
-//        List<User> users = userRepoistory.findAll(spec);
-//        HSSFWorkbook workbook = new HSSFWorkbook();
-//        HSSFSheet sheet = workbook.createSheet("Users Info");
-//        HSSFRow row = sheet.createRow(0);
-//
-//
-//        row.createCell(0).setCellValue("ID");
-//        row.createCell(1).setCellValue("FirstName");
-//        row.createCell(2).setCellValue("LastName");
-//        row.createCell(3).setCellValue("Email");
-//        row.createCell(4).setCellValue("Gender");
-//
-//        int dataRowIndex = 1;
-//        for (User user : users) {
-//            HSSFRow dataRow = sheet.createRow(dataRowIndex);
-//            dataRow.createCell(0).setCellValue(user.getId());
-//            dataRow.createCell(1).setCellValue(user.getFirstName());
-//            dataRow.createCell(2).setCellValue(user.getLastName());
-//            dataRow.createCell(3).setCellValue(user.getEmail());
-//            dataRow.createCell(4).setCellValue(user.getGender());
-//            dataRowIndex++;
-//
-//        }
-//        ServletOutputStream ops = response.getOutputStream();
-//        workbook.write(ops);
-//        workbook.close();
-//        ops.close();
-//
-//    }
-
-
-    //    public List<User>findByUserSpec(UserSearch search){
-//        UserSpec spec = new UserSpec(search);
-//        return userRepoistory.findAll(spec);
-//    }
 
     @Async(value = "taskExecutor")
     public CompletableFuture<Page<User>> findByUserSpec(int pageNum, int pageSize, UserSearch search) {
